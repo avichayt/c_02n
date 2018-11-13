@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #define MAX_AMOUNT_OF_SEQUENCES 100
 #define MAX_LINE_LENGTH 100
@@ -14,14 +15,17 @@
 
 //todo exact errors
 #define FILE_OPEN_ERROR "Error in opening file: %s"
+#define INVALID_NUMBER_ERROR "Error: cannot convert %s to number."
 
 char **getSequencesFromFile(char *fileName, int *amountOfSequences);
 
-bool isHeaderLine(char *line);
+bool isHeaderLine(const char *line);
 
 void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g);
 
 int max(int n1, int n2);
+
+int getIntFromString(char *string);
 
 int main(int argc, char **argv)
 {
@@ -31,12 +35,14 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    // todo strtol instead of atoi
-    int m = atoi(argv[MATCH_WEIGHT_ARGUMENT]);
-    int s = atoi(argv[MISMATCH_WEIGHT_ARGUMENT]);
-    int g = atoi(argv[GAP_WEIGHT_ARGUMENT]);
+    int m = getIntFromString(argv[MATCH_WEIGHT_ARGUMENT]);
+    int s = getIntFromString(argv[MISMATCH_WEIGHT_ARGUMENT]);
+    int g = getIntFromString(argv[GAP_WEIGHT_ARGUMENT]);
 
-    int amountOfSeqs;
+
+
+
+    int amountOfSeqs = 0;
     char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs);
 
     for (int i = 0; i < amountOfSeqs; ++i)
@@ -48,8 +54,14 @@ int main(int argc, char **argv)
         }
     }
 
-    // todo free malloc
     // todo comments
+    // todo errors
+    // todo in1.txt 1 -1 -1
+    for (int k = 0; k < amountOfSeqs; ++k)
+    {
+        free(sequences[k]);
+    }
+    free(sequences);
     return 0;
 }
 
@@ -86,10 +98,10 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
 
 
             *(dataValues + (i) * len2 + (j)) = max(matchXMinusYMinus, max(matchXYMinus, matchXMinusY));
-            int a = 0;
         }
     }
     printf("%d\n", *(dataValues + (len1) * (len2) - 1));
+    free(dataValues);
 }
 
 int max(int n1, int n2)
@@ -129,12 +141,14 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
             if (seqNumber >= 0)
             {
                 sequences[seqNumber] = currentSeq;
+                //
             }
             seqNumber++;
 
             // todo check allocation
             // todo free memory
             currentSeq = (char *) malloc(MAX_LINE_LENGTH * sizeof(char));
+            currentSeq[0] = '\0';
             currentSeqLength = 0;
             currentSeqMemory = MAX_LINE_LENGTH;
         } else
@@ -168,6 +182,7 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
             }
 
             // todo not initialized error
+            currentSeq[currentSeqLength] = '\0';
             strcat(currentSeq, line);
             currentSeqLength += currentLineLength;
         }
@@ -178,9 +193,32 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
     return sequences;
 }
 
-bool isHeaderLine(char *line)
+bool isHeaderLine(const char *line)
 {
     // todo magic number
     return *line == '>';
+}
+
+
+/**
+ * @brief get int value from string
+ * @param string string to get number from
+ * @return the number
+ */
+int getIntFromString(char *string)
+{
+    errno = 0;
+    char *endOfNumber;
+    int result = 0;
+
+
+
+    result = (int) strtol(string, &endOfNumber, 10);
+    if (result == 0 && (errno != 0 || endOfNumber == string))
+    {
+        fprintf(stderr, INVALID_NUMBER_ERROR, string);
+        exit(EXIT_FAILURE);
+    }
+    return result;
 }
 
