@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define MAX_AMOUNT_OF_SEQUENCES 101
-#define MAX_LINE_LENGTH 101
+#define MAX_AMOUNT_OF_SEQUENCES 102
+#define MAX_LINE_LENGTH 102
 #define AMOUNT_OF_ARGC 5
 
 #define FILE_NAME_ARGUMENT 1
@@ -115,14 +115,15 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
         {
             if (seq1[i - 1] == seq2[j - 1])
             {
-                matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + m);//dataValues[i - 1][j - 1] + m;
-            } else
+                matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + m);
+            }
+            else
             {
                 matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + s);
             }
 
-            matchXMinusY = (int) (*(dataValues + (i - 1) * len2 + (j)) + g); //dataValues[i - 1][j] + g;
-            matchXYMinus = (int) (*(dataValues + (i) * len2 + (j - 1)) + g);//dataValues[i][i - 1] + g;
+            matchXMinusY = (int) (*(dataValues + (i - 1) * len2 + (j)) + g);
+            matchXYMinus = (int) (*(dataValues + (i) * len2 + (j - 1)) + g);
 
             // get the maximum of the three
             *(dataValues + (i) * len2 + (j)) = max(matchXMinusYMinus, max(matchXYMinus, matchXMinusY));
@@ -175,8 +176,6 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
     size_t currentSeqMemory = 0;
     size_t currentLineLength;
 
-    //char names[100][100];
-
 
     // read file line by line into 'line' array
     while (fgets(line, MAX_LINE_LENGTH, fileHandle) != NULL)
@@ -199,7 +198,8 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
             currentSeq[0] = '\0';
             currentSeqLength = 0;
             currentSeqMemory = MAX_LINE_LENGTH;
-        } else
+        }
+        else
         {
             if (isWhiteSpace(line))
             {
@@ -227,7 +227,8 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
                 {
                     currentSeqLength++; // for null terminator
                 }
-            } else
+            }
+            else
             {
                 // todo check NULL
                 currentSeqMemory = currentSeqMemory + MAX_LINE_LENGTH * sizeof(char);
@@ -289,7 +290,9 @@ bool isWhiteSpace(const char *string)
     while (*string)
     {
         if (!isspace(*string))
+        {
             return false;
+        }
         string++;
     }
     return true;
