@@ -15,10 +15,11 @@
 #define GAP_WEIGHT_ARGUMENT 4
 #define SEQ_OPENER '>'
 
-//todo exact errors
-#define FILE_OPEN_ERROR "Error in opening file: %s"
-#define INVALID_NUMBER_ERROR "Error: cannot convert %s to number."
-#define TOO_FEW_SEQUENCES "Error: File contains less than two sequences."
+#define FILE_OPEN_ERROR "Error in opening file: %s\n"
+#define INVALID_NUMBER_ERROR "Error cannot convert %s to number.\n"
+#define TOO_FEW_SEQUENCES "Error File contains less than two sequences.\n"
+
+#define SCORE_MESSAGE "Score for alignment of sequence %s to sequence %s is "
 
 char **
 getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH]);
@@ -65,18 +66,15 @@ int main(int argc, char **argv)
     {
         for (int j = i + 1; j < amountOfSeqs; ++j)
         {
-            printf("Score for alignment of sequence %s to sequence %s is ", names[i], names[j]);
+            printf(SCORE_MESSAGE, names[i], names[j]);
             calculateAlignmentScore(sequences[i], sequences[j], m, s, g);
         }
     }
 
-    // todo comments
-    // todo errors
     // todo in1.txt 1 -1 -1
     // todo run tests
-    // stderr
-    // todo seq names
     // todo compile without errors
+    // todo valgrind.
 
     // free all allocations
     for (int k = 0; k < amountOfSeqs; ++k)

@@ -1,0 +1,4 @@
+Score for alignment of sequence seq1 to sequence seq2 is 8578
+Score for alignment of sequence seq1 to sequence seq3 is 8266
+Score for alignment of sequence seq2 to sequence seq3 is 4856
+
