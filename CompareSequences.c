@@ -19,7 +19,8 @@
 #define INVALID_NUMBER_ERROR "Error: cannot convert %s to number."
 #define TOO_FEW_SEQUENCES "Error: File contains less than two sequences."
 
-char **getSequencesFromFile(char *fileName, int *amountOfSequences);
+char **
+getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH]);
 
 bool isHeaderLine(const char *line);
 
@@ -49,7 +50,8 @@ int main(int argc, char **argv)
 
 
     int amountOfSeqs = 0;
-    char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs);
+    char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH];
+    char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs, names);
 
     if (amountOfSeqs < 2)
     {
@@ -60,7 +62,7 @@ int main(int argc, char **argv)
     {
         for (int j = i + 1; j < amountOfSeqs; ++j)
         {
-            printf("Score for alignment of sequence seq1 to sequence seq2 is ");
+            printf("Score for alignment of sequence %s to sequence %s is ", names[i], names[j]);
             calculateAlignmentScore(sequences[i], sequences[j], m, s, g);
         }
     }
@@ -110,8 +112,6 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
     {
         for (int j = 1; j < len2; ++j)
         {
-
-
             if (seq1[i - 1] == seq2[j - 1])
             {
                 matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + m);//dataValues[i - 1][j - 1] + m;
@@ -152,7 +152,8 @@ int max(int n1, int n2)
  * @param amountOfSequences  the amount of sequneces read (out parmater)
  * @return sequences array
  */
-char **getSequencesFromFile(char *fileName, int *amountOfSequences)
+char **
+getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH])
 {
 
     FILE *fileHandle;
@@ -172,6 +173,10 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
     size_t currentSeqLength = 0;
     size_t currentSeqMemory = 0;
     size_t currentLineLength;
+
+    //char names[100][100];
+
+
     // read file line by line into 'line' array
     while (fgets(line, MAX_LINE_LENGTH, fileHandle) != NULL)
     {
@@ -183,6 +188,9 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
                 sequences[seqNumber] = currentSeq;
             }
             seqNumber++;
+
+            strcpy(names[seqNumber], line + 1);
+            names[seqNumber][strlen(names[seqNumber]) - 1] = 0;
 
             // todo check allocation
             // todo free memory
