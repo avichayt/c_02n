@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <ctype.h>
 
 #define MAX_AMOUNT_OF_SEQUENCES 100
 #define MAX_LINE_LENGTH 100
@@ -29,6 +30,8 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g);
 int max(int n1, int n2);
 
 int getIntFromString(char *string);
+
+bool isWhiteSpace(const char *string);
 
 /**
  * @brief the main function of the program
@@ -163,7 +166,7 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
     fileHandle = fopen(fileName, "r");
     if (fileHandle == NULL)
     {
-        printf(FILE_OPEN_ERROR, fileName);
+        fprintf(stderr, FILE_OPEN_ERROR, fileName);
         exit(EXIT_FAILURE);
     }
 
@@ -200,6 +203,11 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
             currentSeqMemory = MAX_LINE_LENGTH;
         } else
         {
+            if (isWhiteSpace(line))
+            {
+                continue;
+            }
+
             //todo check whitespace line
             currentLineLength = strlen(line);
 
@@ -271,5 +279,21 @@ int getIntFromString(char *string)
         exit(EXIT_FAILURE);
     }
     return result;
+}
+
+/**
+ * @brief check if line is empty
+ * @param string the line
+ * @return is empty
+ */
+bool isWhiteSpace(const char *string)
+{
+    while (*string)
+    {
+        if (!isspace(*string))
+            return false;
+        string++;
+    }
+    return true;
 }
 
