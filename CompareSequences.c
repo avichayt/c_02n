@@ -59,7 +59,6 @@ int main(int argc, char **argv)
 {
     if (argc < AMOUNT_OF_ARGC)
     {
-        // todo
         exit(EXIT_FAILURE);
     }
 
@@ -86,10 +85,6 @@ int main(int argc, char **argv)
         }
     }
 
-    // todo in1.txt 1 -1 -1
-    // todo run tests
-    // todo compile without errors
-    // todo valgrind.
 
     // free all allocations
     for (int k = 0; k < amountOfSeqs; ++k)
@@ -207,8 +202,7 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
             strcpy(names[seqNumber], line + 1);
             names[seqNumber][strlen(names[seqNumber]) - 1] = 0;
 
-            // todo check allocation
-            // todo free memory
+
             currentSeq = (char *) malloc(MAX_LINE_LENGTH * sizeof(char));
             currentSeq[0] = '\0';
             currentSeqLength = 0;
@@ -221,7 +215,6 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
                 continue;
             }
 
-            //todo check whitespace line
             currentLineLength = strlen(line);
 
             // remove new line char from line
@@ -245,12 +238,10 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
             }
             else
             {
-                // todo check NULL
                 currentSeqMemory = currentSeqMemory + MAX_LINE_LENGTH * sizeof(char);
                 currentSeq = (char *) realloc(currentSeq, currentSeqMemory);
             }
 
-            // todo not initialized error
             currentSeq[currentSeqLength] = '\0';
             strcat(currentSeq, line);
             currentSeqLength += currentLineLength;
@@ -269,7 +260,6 @@ getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOU
  */
 bool isHeaderLine(const char *line)
 {
-    // todo magic number
     return *line == SEQ_OPENER;
 }
 

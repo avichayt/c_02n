@@ -3,4 +3,4 @@ project(02n C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(02n CompareSequences.c)
+add_executable(02n regev.c)
