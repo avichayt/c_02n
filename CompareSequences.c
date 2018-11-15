@@ -19,7 +19,7 @@
 #define INVALID_NUMBER_ERROR "Error cannot convert %s to number.\n"
 #define TOO_FEW_SEQUENCES "Error File contains less than two sequences.\n"
 
-#define SCORE_MESSAGE "Score for alignment of sequence %s to sequence %s is "
+#define SCORE_MESSAGE "Score for alignment of %s to %s is "
 
 char **
 getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH]);
