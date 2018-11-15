@@ -1,9 +1,20 @@
+/**
+ * @file CompareSequences.c
+ * @author Avichay Radovsky
+ * @brief Calculate alignment matrix of sequences.
+ */
+
+// ------------------------------------------- includes -------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <ctype.h>
+
+
+// ------------------------------------- constants definition -------------------------------------
 
 #define MAX_AMOUNT_OF_SEQUENCES 102
 #define MAX_LINE_LENGTH 102
@@ -20,6 +31,10 @@
 #define TOO_FEW_SEQUENCES "Error File contains less than two sequences.\n"
 
 #define SCORE_MESSAGE "Score for alignment of %s to %s is "
+
+
+// ------------------------------------------- functions ------------------------------------------
+// documentation after signatures.
 
 char **
 getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH]);
