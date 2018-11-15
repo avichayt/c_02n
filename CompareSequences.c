@@ -12,10 +12,12 @@
 #define MATCH_WEIGHT_ARGUMENT 2
 #define MISMATCH_WEIGHT_ARGUMENT 3
 #define GAP_WEIGHT_ARGUMENT 4
+#define SEQ_OPENER '>'
 
 //todo exact errors
 #define FILE_OPEN_ERROR "Error in opening file: %s"
 #define INVALID_NUMBER_ERROR "Error: cannot convert %s to number."
+#define TOO_FEW_SEQUENCES "Error: File contains less than two sequences."
 
 char **getSequencesFromFile(char *fileName, int *amountOfSequences);
 
@@ -27,6 +29,12 @@ int max(int n1, int n2);
 
 int getIntFromString(char *string);
 
+/**
+ * @brief the main function of the program
+ * @param argc args counter
+ * @param argv args vector
+ * @return status
+ */
 int main(int argc, char **argv)
 {
     if (argc < AMOUNT_OF_ARGC)
@@ -40,10 +48,13 @@ int main(int argc, char **argv)
     int g = getIntFromString(argv[GAP_WEIGHT_ARGUMENT]);
 
 
-
-
     int amountOfSeqs = 0;
     char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs);
+
+    if (sequences < 2)
+    {
+        fprintf(stderr, TOO_FEW_SEQUENCES);
+    }
 
     for (int i = 0; i < amountOfSeqs; ++i)
     {
@@ -57,6 +68,10 @@ int main(int argc, char **argv)
     // todo comments
     // todo errors
     // todo in1.txt 1 -1 -1
+    // todo run tests
+    // stderr
+
+    // free all allocations
     for (int k = 0; k < amountOfSeqs; ++k)
     {
         free(sequences[k]);
@@ -65,9 +80,19 @@ int main(int argc, char **argv)
     return 0;
 }
 
+/**
+ * @brief calculates the alignment score of sequences
+ * @param seq1 first one
+ * @param seq2 second seq
+ * @param m match weight
+ * @param s mismatch
+ * @param g gap
+ */
 void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
 {
     int len1 = (int) strlen(seq1) + 1, len2 = (int) strlen(seq2) + 1;
+
+    // build alignment matrix
     int *dataValues = (int *) malloc((len1) * (len2) * sizeof(int));
     for (int i = 0; i < len1; ++i)
     {
@@ -96,7 +121,7 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
             matchXMinusY = (int) (*(dataValues + (i - 1) * len2 + (j)) + g); //dataValues[i - 1][j] + g;
             matchXYMinus = (int) (*(dataValues + (i) * len2 + (j - 1)) + g);//dataValues[i][i - 1] + g;
 
-
+            // get the maximum of the three
             *(dataValues + (i) * len2 + (j)) = max(matchXMinusYMinus, max(matchXYMinus, matchXMinusY));
         }
     }
@@ -104,6 +129,12 @@ void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
     free(dataValues);
 }
 
+/**
+ * @brief get maximum of two numberes
+ * @param n1 first number
+ * @param n2 second number
+ * @return maximum
+ */
 int max(int n1, int n2)
 {
     if (n1 > n2)
@@ -113,9 +144,15 @@ int max(int n1, int n2)
     return n2;
 }
 
+/**
+ * @brief get sequences from data file
+ * @param fileName  the file name
+ * @param amountOfSequences  the amount of sequneces read (out parmater)
+ * @return sequences array
+ */
 char **getSequencesFromFile(char *fileName, int *amountOfSequences)
 {
-    //todo make function shorter
+
     FILE *fileHandle;
     char line[MAX_LINE_LENGTH];
 
@@ -138,10 +175,10 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
     {
         if (isHeaderLine(line))
         {
+            // only if not the first one
             if (seqNumber >= 0)
             {
                 sequences[seqNumber] = currentSeq;
-                //
             }
             seqNumber++;
 
@@ -193,10 +230,15 @@ char **getSequencesFromFile(char *fileName, int *amountOfSequences)
     return sequences;
 }
 
+/**
+ * @brief check if line is header line
+ * @param line line to check
+ * @return bool of line is header
+ */
 bool isHeaderLine(const char *line)
 {
     // todo magic number
-    return *line == '>';
+    return *line == SEQ_OPENER;
 }
 
 
@@ -210,7 +252,6 @@ int getIntFromString(char *string)
     errno = 0;
     char *endOfNumber;
     int result = 0;
-
 
 
     result = (int) strtol(string, &endOfNumber, 10);
