@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     {
         for (int j = i + 1; j < amountOfSeqs; ++j)
         {
-            printf("i:%d, j:%d\n", i, j);
+            printf("Score for alignment of sequence seq1 to sequence seq2 is ");
             calculateAlignmentScore(sequences[i], sequences[j], m, s, g);
         }
     }
@@ -70,6 +70,8 @@ int main(int argc, char **argv)
     // todo in1.txt 1 -1 -1
     // todo run tests
     // stderr
+    // todo seq names
+    // todo compile without errors
 
     // free all allocations
     for (int k = 0; k < amountOfSeqs; ++k)
