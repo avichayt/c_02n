@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     int amountOfSeqs = 0;
     char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs);
 
-    if (sequences < 2)
+    if (amountOfSeqs < 2)
     {
         fprintf(stderr, TOO_FEW_SEQUENCES);
     }
