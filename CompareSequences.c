@@ -1,305 +1,535 @@
 /**
  * @file CompareSequences.c
- * @author Avichay Radovsky
- * @brief Calculate alignment matrix of sequences.
+ * @author Johnathan Regev
+ * @brief Program to compare sequences. The program gets name of a sequences file in a known
+ * format and the weights of match, mismatch and gap. The program compares each pair of sequences
+ * in the file using a dynamic programming algorithm, and prints the score and the match for each
+ * pair.
  */
 
 // ------------------------------------------- includes -------------------------------------------
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdbool.h>
 #include <errno.h>
-#include <ctype.h>
-
 
 // ------------------------------------- constants definition -------------------------------------
+#define NUMBER_OF_ARGUMENTS 5
+#define FILE_NAME_INDEX 1
+#define M_INDEX 2
+#define S_INDEX 3
+#define G_INDEX 4
+#define MINIMAL_NUMBER_OF_SEQUENCES 2
+#define DECIMAL_BASE 10
+#define MAXIMAL_NUMBER_OF_SEQUENCES 100
+#define MAXIMAL_ROW_LENGTH 101
 
-#define MAX_AMOUNT_OF_SEQUENCES 102
-#define MAX_LINE_LENGTH 102
-#define AMOUNT_OF_ARGC 5
-
-#define FILE_NAME_ARGUMENT 1
-#define MATCH_WEIGHT_ARGUMENT 2
-#define MISMATCH_WEIGHT_ARGUMENT 3
-#define GAP_WEIGHT_ARGUMENT 4
-#define SEQ_OPENER '>'
-
-#define FILE_OPEN_ERROR "Error in opening file: %s\n"
-#define INVALID_NUMBER_ERROR "Error cannot convert %s to number.\n"
-#define TOO_FEW_SEQUENCES "Error File contains less than two sequences.\n"
-
-#define SCORE_MESSAGE "Score for alignment of %s to %s is "
-
+const char HEADER_LINE_FIRST_CHAR = '>';
+const char MEMORY_ALLOCATION_FAILED_MESSAGE[] = "Error - memory allocation failed\n";
 
 // ------------------------------------------- functions ------------------------------------------
-// documentation after signatures.
-
-char **
-getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH]);
-
-bool isHeaderLine(const char *line);
-
-void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g);
-
+/**
+ * @brief A function that checks valid usage of the program, and reads the program arguments.
+ * @param argc The number of program arguments.
+ * @param argv The program arguments.
+ * @param fileNameAddress A pointer to the sequences file name.
+ * @param mAddress A pointer to the weight of a match.
+ * @param sAddress A pointer to the weight of a mismatch.
+ * @param gAddress A pointer to the weight of a gap.
+ * @return 0 if the usage is valid, -1 else.
+ */
+int checkUsage(int argc, char *argv[], char **fileNameAddress,
+               int *mAddress, int *sAddress, int *gAddress);
+/**
+ * @brief A function that checks valid integer input, and reads it.
+ * @param str A string (should represents an integer).
+ * @param numberAddress A pointer to a variable represents an integer.
+ * @return 0 if the usage is valid, -1 else.
+ */
+int checkNumber(char *str, int *numberAddress);
+/**
+ * @brief A function that reads a sequences file.
+ * @param fileName A string represents the file name.
+ * @param sequencesNames An array of strings, that the function reads the names of the sequences
+ * to.
+ * @param sequences An array of strings, that the function reads the sequences to.
+ * @param numberOfSequencesAddress A pointer to the number of sequences that read.
+ */
+void readSequencesFile(char *fileName, char *sequencesNames[], char *sequences[],
+                       int *numberOfSequencesAddress);
+/**
+ * @brief A function that deletes the newline or end-of-file characters from the end of a string
+ * (if it end with one of them), and returns the string's length.
+ * @param row A string.
+ * @return The string's length (after the deletion).
+ */
+int deleteNewline(char *row);
+/**
+ * @brief A function that gets an array of sequences, compares each pair of sequences in the array
+ * using a dynamic programming algorithm, and prints the score and the match for each pair.
+ * @param sequencesNames An array of sequences names.
+ * @param sequences An array of sequences.
+ * @param numberOfSequences The number of sequences in the array.
+ * @param m The weight of a match.
+ * @param s The weight of a mismatch.
+ * @param g The weight of a gap.
+ */
+void compareSequences(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                      int m, int s, int g);
+/**
+ * @brief A function that compares two sequences using a dynamic programming algorithm, and prints
+ * their score and match.
+ * @param sequencesNames The sequences names array.
+ * @param sequences The sequences array.
+ * @param numberOfSequences The number of sequences in the array.
+ * @param sequence1Name The first sequence's name.
+ * @param sequences2Name The second sequence's name.
+ * @param sequence1 The first sequence to compare.
+ * @param sequence2 The second sequence to compare.
+ * @param m The weight of a match.
+ * @param s The weight of a mismatch.
+ * @param g The weight of a gap.
+ */
+void compareTwoSequences(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                         char *sequence1Name, char *sequences2Name,
+                         char *sequence1, char *sequence2, int m, int s, int g);
+/**
+ * @brief A function that frees the memory allocated for the sequences array.
+ * @param sequences The sequences array.
+ * @param numberOfSequences The number of sequences in the array.
+ */
+void freeSequencesMemory(char *sequences[], int numberOfSequences);
+/**
+ * @brief A function that allocates memory for the table used in the dynamic algorithm to compare
+ * two sequences (if the allocation failed, the function frees the memory aready allocated by the
+ * program).
+ * @param sequencesNames The sequences names array.
+ * @param sequences The sequences array.
+ * @param numberOfSequences The number of sequences in the array.
+ * @param tableAddress A pointer to the table.
+ * @param tableRows The number of rows in the table.
+ * @param tableColumns The number of columns in the table.
+ */
+void allocateTable(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                   int ***tableAddress, int tableRows, int tableColumns);
+/**
+ * @brief A function that fills the table used in the dynamic algorithm to compare two sequences.
+ * @param sequence1 The first sequence compared.
+ * @param sequence2 The second sequence compared.
+ * @param table The (empty) table.
+ * @param tableRows The number of rows in the table.
+ * @param tableColumns The number of columns in the table.
+ * @param m The weight of a match.
+ * @param s The weight of a mismatch.
+ * @param g The weight of a gap.
+ */
+void fillTable(char *sequence1, char *sequence2, int **table,
+               int tableRows, int tableColumns, int m, int s, int g);
+/**
+ * brief A function that initializes the table used in the dynamic algorithm to compare two
+ * sequences.
+ * @param table The (empty) talbe.
+ * @param tableRows The number of rows in the table.
+ * @param tableColumns The number of columns in the table.
+ * @param g The weight of a gap.
+ */
+void initializeTable(int **table, int tableRows, int tableColumns, int g);
+/**
+ * @brief A function that fills a cell in the table used in the dynamic algorithm to compare two
+ * sequences.
+ * @param sequence1 The first sequence compared.
+ * @param sequence2 The second sequence compared.
+ * @param table The table.
+ * @param row The number of row of the cell.
+ * @param column The number of column of the cell.
+ * @param m The weight of a match.
+ * @param s The weight of a mismatch.
+ * @param g The weight of a gap.
+ */
+void fillTableCell(char *sequence1, char *sequence2, int **table,
+                   int row, int column, int m, int s, int g);
+/**
+ * @brief A function that computes the first opportunity for a cell in the table used in the
+ * dynamic algorithm to compare two sequences (according to the exercise PDF).
+ * @param sequence1 The first sequence compared.
+ * @param sequence2 The second sequence compared.
+ * @param table The table.
+ * @param row The number of row of the cell.
+ * @param column The number of column of the cell.
+ * @param m The weight of a match.
+ * @param s The weight of a mismatch.
+ * @return  The first opportunity for a cell in the table used in the dynamic algorithm to compare
+ * two sequences (according to the exercise PDF).
+ */
+int computeFirstMatchScore(char *sequence1, char *sequence2, int **table,
+                           int row, int column, int m, int s);
+/**
+ * @brief A function that computes the second opportunity for a cell in the table used in the
+ * dynamic algorithm to compare two sequences (according to the exercise PDF).
+ * @param table The table.
+ * @param row The number of row of the cell.
+ * @param column The number of column of the cell.
+ * @param g The weight of a gap.
+ * @return The second opportunity for a cell in the table used in the dynamic algorithm to compare
+ * two sequences (according to the exercise PDF).
+ */
+int computeSecondMatchScore(int **table, int row, int column, int g);
+/**
+ * @brief A function that computes the third opportunity for a cell in the table used in the
+ * dynamic algorithm to compare two sequences (according to the exercise PDF).
+ * @param table The table.
+ * @param row The number of row of the cell.
+ * @param column The number of column of the cell.
+ * @param g The weight of a gap.
+ * @return The third opportunity for a cell in the table used in the dynamic algorithm to compare
+ * two sequences (according to the exercise PDF).
+ */
+int computeThirdMatchScore(int **table, int row, int column, int g);
+/**
+ * @brief A function that computes the maximum of three integers.
+ * @param n1 The first integer.
+ * @param n2 The second integer.
+ * @param n3 The third integer.
+ * @return The maximum of the three integers.
+ */
+int max3(int n1, int n2, int n3);
+/**
+ * @brief A function that computes the maximum of two numbers.
+ * @param n1 The first number.
+ * @param n2 The second number.
+ * @return The maximum of the two numbers.
+ */
 int max(int n1, int n2);
-
-int getIntFromString(char *string);
-
-bool isWhiteSpace(const char *string);
+/**
+ * @brief A function that prints the score of the comparison of two sequences.
+ * @param table The table used in the dynamic algorithm to compare two sequences.
+ * @param tableRows The number of rows in the table.
+ * @param tableColumns The number of columns in the table.
+ * @param sequence1Name The name of the first sequence in the sequences array.
+ * @param sequence2Name The name of the second sequence in the sequences array.
+ */
+void printScore(int **table, int tableRows, int tableColumns,
+                char *sequence1Name, char *sequence2Name);
+/**
+ * @brief A function that frees the memory allocated for the table used in the dynamic algorithm to
+ * compare two sequences.
+ * @param table The table.
+ * @param tableRows The number of rows in the table.
+ */
+void freeTableMemory(int **table, int tableRows);
 
 /**
- * @brief the main function of the program
- * @param argc args counter
- * @param argv args vector
- * @return status
+ * @brief The main function of the program. The function checks the validity of the usage of the
+ * program, reads the sequences file, compares each pair of sequences in the file (using a dynamic
+ * programming algorithm), and prints the score and the match for each pair.
+ * @param argc The number of program arguments.
+ * @param argv The program arguments.
+ * @return 0 if the function succeed, -1 else.
  */
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {
-    if (argc < AMOUNT_OF_ARGC)
+    char *fileName = NULL;
+    int m, s, g;
+    int usage = checkUsage(argc, argv, &fileName, &m, &s, &g);
+    if (usage) // if the usage is wrong
     {
-        exit(EXIT_FAILURE);
+        fprintf(stdout, "Usage: CompareSequences <path_to_sequences_file> <m> <s> <g>\n");
+        return -1;
     }
-
-    int m = getIntFromString(argv[MATCH_WEIGHT_ARGUMENT]);
-    int s = getIntFromString(argv[MISMATCH_WEIGHT_ARGUMENT]);
-    int g = getIntFromString(argv[GAP_WEIGHT_ARGUMENT]);
-
-
-    int amountOfSeqs = 0;
-    char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH];
-    char **sequences = getSequencesFromFile(argv[FILE_NAME_ARGUMENT], &amountOfSeqs, names);
-
-    if (amountOfSeqs < 2)
+    char *sequencesNames[MAXIMAL_NUMBER_OF_SEQUENCES];
+    char *sequences[MAXIMAL_NUMBER_OF_SEQUENCES];
+    int numberOfSequences = 0;
+    readSequencesFile(fileName, sequencesNames, sequences, &numberOfSequences);
+    if (numberOfSequences < MINIMAL_NUMBER_OF_SEQUENCES)
     {
-        fprintf(stderr, TOO_FEW_SEQUENCES);
+        fprintf(stderr, "Error - the sequences file contains less than 2 sequences\n");
+        freeSequencesMemory(sequencesNames, numberOfSequences);
+        freeSequencesMemory(sequences, numberOfSequences);
     }
-
-    for (int i = 0; i < amountOfSeqs; ++i)
-    {
-        for (int j = i + 1; j < amountOfSeqs; ++j)
-        {
-            printf(SCORE_MESSAGE, names[i], names[j]);
-            calculateAlignmentScore(sequences[i], sequences[j], m, s, g);
-        }
-    }
-
-
-    // free all allocations
-    for (int k = 0; k < amountOfSeqs; ++k)
-    {
-        free(sequences[k]);
-    }
-    free(sequences);
+    compareSequences(sequencesNames, sequences, numberOfSequences, m, s, g);
+    freeSequencesMemory(sequencesNames, numberOfSequences);
+    freeSequencesMemory(sequences, numberOfSequences);
     return 0;
 }
 
-/**
- * @brief calculates the alignment score of sequences
- * @param seq1 first one
- * @param seq2 second seq
- * @param m match weight
- * @param s mismatch
- * @param g gap
- */
-void calculateAlignmentScore(char *seq1, char *seq2, int m, int s, int g)
+int checkUsage(int argc, char *argv[], char **fileNameAddress,
+               int *mAddress, int *sAddress, int *gAddress)
 {
-    int len1 = (int) strlen(seq1) + 1, len2 = (int) strlen(seq2) + 1;
-
-    // build alignment matrix
-    int *dataValues = (int *) malloc((len1) * (len2) * sizeof(int));
-    for (int i = 0; i < len1; ++i)
+    if (argc != NUMBER_OF_ARGUMENTS)
     {
-        *(dataValues + (i) * len2 + (0)) = g * i;
+        return -1;
     }
-    for (int i = 0; i < len2; ++i)
+    *fileNameAddress = argv[FILE_NAME_INDEX];
+    if (checkNumber(argv[M_INDEX], mAddress) ||
+        checkNumber(argv[S_INDEX], sAddress) ||
+        checkNumber(argv[G_INDEX], gAddress))
     {
-        *(dataValues + (0) * len2 + (i)) = g * i;
+        return -1;
     }
+    return 0;
 
-    int matchXMinusYMinus, matchXYMinus, matchXMinusY;
-    for (int i = 1; i < len1; ++i)
+}
+
+int checkNumber(char *str, int *numberAddress)
+{
+    char *end = NULL;
+    *numberAddress = (int)strtol(str, &end, DECIMAL_BASE);
+    if ((*numberAddress == 0 && (errno != 0 || end == str)) || *end != '\0')
     {
-        for (int j = 1; j < len2; ++j)
+        return -1;
+    }
+    return 0;
+}
+
+void readSequencesFile(char *fileName, char *sequencesNames[], char *sequences[],
+                       int *numberOfSequencesAddress)
+{
+    FILE *file = fopen(fileName, "r");
+    if (file == NULL)
+    {
+        fprintf(stderr, "Error opening file\n");
+        exit(EXIT_FAILURE);
+    }
+    char row[MAXIMAL_ROW_LENGTH];
+    int startSequence = 0;
+    int rowLength = 0;
+    int sequenceLength = 0;
+    char *temp = NULL;
+    while(fgets(row, MAXIMAL_ROW_LENGTH, file) != NULL)
+    {
+        //when malloc add 1 to numberOfSequences
+        if (row[0] == HEADER_LINE_FIRST_CHAR)
         {
-            if (seq1[i - 1] == seq2[j - 1])
+            rowLength = deleteNewline(row);
+            sequencesNames[*numberOfSequencesAddress] = (char *)malloc(rowLength * sizeof(char));
+            if (sequencesNames[*numberOfSequencesAddress] == NULL)
             {
-                matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + m);
+                fprintf(stderr, MEMORY_ALLOCATION_FAILED_MESSAGE);
+                freeSequencesMemory(sequencesNames, *numberOfSequencesAddress);
+                freeSequencesMemory(sequences, *numberOfSequencesAddress);
+                exit(EXIT_FAILURE);
             }
             else
             {
-                matchXMinusYMinus = (int) (*(dataValues + (i - 1) * len2 + (j - 1)) + s);
+                strncpy(sequencesNames[*numberOfSequencesAddress], row + 1, (size_t)rowLength - 1);
+                sequencesNames[*numberOfSequencesAddress][rowLength - 1] = '\0';
             }
-
-            matchXMinusY = (int) (*(dataValues + (i - 1) * len2 + (j)) + g);
-            matchXYMinus = (int) (*(dataValues + (i) * len2 + (j - 1)) + g);
-
-            // get the maximum of the three
-            *(dataValues + (i) * len2 + (j)) = max(matchXMinusYMinus, max(matchXYMinus, matchXMinusY));
+            startSequence = 1;
+        }
+        else
+        {
+            rowLength = deleteNewline(row);
+            if (startSequence)
+            {
+                sequences[*numberOfSequencesAddress] = (char *)malloc(
+                                                       (rowLength + 1) * sizeof(char));
+                if (sequences[*numberOfSequencesAddress] == NULL)
+                {
+                    fprintf(stderr, MEMORY_ALLOCATION_FAILED_MESSAGE);
+                    freeSequencesMemory(sequencesNames, *numberOfSequencesAddress);
+                    freeSequencesMemory(sequences, *numberOfSequencesAddress);
+                    exit(EXIT_FAILURE);
+                }
+                strncpy(sequences[*numberOfSequencesAddress], row, rowLength * sizeof(char));
+                sequences[*numberOfSequencesAddress][rowLength] = '\0';
+                (*numberOfSequencesAddress)++;
+                startSequence = 0;
+            }
+            else
+            {
+                sequenceLength = (int)strlen(sequences[*numberOfSequencesAddress - 1]);
+                temp = (char *)realloc(sequences[*numberOfSequencesAddress],
+                        (sequenceLength + rowLength + 1) * sizeof(char));
+                if (temp == NULL)
+                {
+                    fprintf(stderr, MEMORY_ALLOCATION_FAILED_MESSAGE);
+                    freeSequencesMemory(sequencesNames, *numberOfSequencesAddress);
+                    freeSequencesMemory(sequences, *numberOfSequencesAddress);
+                    exit(EXIT_FAILURE);
+                }
+                sequences[*numberOfSequencesAddress] = temp;
+                strncpy(sequences[*numberOfSequencesAddress] + sequenceLength, row,
+                        rowLength * sizeof(char));
+                sequences[*numberOfSequencesAddress][sequenceLength + rowLength] = '\0';
+            }
         }
     }
-    printf("%d\n", *(dataValues + (len1) * (len2) - 1));
-    free(dataValues);
+    if (!feof(file))
+    {
+        fprintf(stderr, "Error reading file\n");
+        freeSequencesMemory(sequences, *numberOfSequencesAddress);
+        exit(EXIT_FAILURE);
+    }
+    if (fclose(file))
+    {
+        fprintf(stderr, "Error closing file\n");
+        freeSequencesMemory(sequences, *numberOfSequencesAddress);
+        exit(EXIT_FAILURE);
+    }
 }
 
-/**
- * @brief get maximum of two numberes
- * @param n1 first number
- * @param n2 second number
- * @return maximum
- */
+int deleteNewline(char *row)
+{
+    int rowLength = 0;
+    for (int i = 0; i < MAXIMAL_ROW_LENGTH - 1; i++)
+    {
+        if (row[i] == '\n' || row[i] == '\r' || row[i] == EOF)
+        {
+            row[i] = '\0';
+            break;
+        }
+        rowLength++;
+    }
+    return rowLength;
+}
+
+void compareSequences(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                      int m, int s, int g)
+{
+    for (int i = 0; i < numberOfSequences - 1; i++)
+    {
+        for (int j = i + 1; j < numberOfSequences; j++)
+        {
+            compareTwoSequences(sequencesNames, sequences, numberOfSequences,
+                                sequencesNames[i], sequencesNames[j],
+                                sequences[i], sequences[j], m, s, g);
+        }
+    }
+}
+
+void compareTwoSequences(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                         char *sequence1Name, char *sequences2Name,
+                         char *sequence1, char *sequence2, int m, int s, int g)
+{
+    int tableRows = (int)strlen(sequence1) + 1, tableColumns = (int)strlen(sequence2) + 1;
+    int **table = NULL;
+    allocateTable(sequencesNames, sequences, numberOfSequences, &table, tableRows, tableColumns);
+    fillTable(sequence1, sequence2, table, tableRows, tableColumns, m, s, g);
+    printScore(table, tableRows, tableColumns, sequence1Name, sequences2Name);
+    freeTableMemory(table, tableRows);
+}
+
+void allocateTable(char *sequencesNames[], char *sequences[], int numberOfSequences,
+                   int ***tableAddress, int tableRows, int tableColumns)
+{
+    *tableAddress = (int **)malloc(tableRows * sizeof(int *));
+    if (*tableAddress == NULL)
+    {
+        fprintf(stderr, MEMORY_ALLOCATION_FAILED_MESSAGE);
+        freeSequencesMemory(sequencesNames, numberOfSequences);
+        freeSequencesMemory(sequences, numberOfSequences);
+        exit(EXIT_FAILURE);
+    }
+    for (int i = 0; i < tableRows; i++)
+    {
+        (*tableAddress)[i] = (int *)malloc(tableColumns * sizeof(int));
+        if ((*tableAddress)[i] == NULL)
+        {
+            fprintf(stderr, MEMORY_ALLOCATION_FAILED_MESSAGE);
+            freeTableMemory(*tableAddress, i - 1);
+            freeSequencesMemory(sequencesNames, numberOfSequences);
+            freeSequencesMemory(sequences, numberOfSequences);
+            exit(EXIT_FAILURE);
+        }
+    }
+}
+
+void fillTable(char *sequence1, char *sequence2, int **table, int tableRows,
+               int tableColumns, int m, int s, int g)
+{
+    initializeTable(table, tableRows, tableColumns, g);
+    for (int i = 1; i < tableRows; i++)
+    {
+        for (int j = 1; j < tableColumns; j++)
+        {
+            fillTableCell(sequence1, sequence2, table, i, j, m, s, g);
+        }
+    }
+}
+
+void initializeTable(int **table, int tableRows, int tableColumns, int g)
+{
+    for (int i = 0; i < tableRows; i++)
+    {
+        table[i][0] = i * g;
+    }
+    for (int j = 1; j < tableColumns; j++)
+    {
+        table[0][j] = j * g;
+    }
+}
+
+void fillTableCell(char *sequence1, char *sequence2, int **table,
+                   int row, int column, int m, int s, int g)
+{
+    int firstMatchScore = computeFirstMatchScore(sequence1, sequence2, table, row, column, m, s);
+    int secondMatchScore = computeSecondMatchScore(table, row, column, g);
+    int thirdMatchScore = computeThirdMatchScore(table, row, column, g);
+    int score = max3(firstMatchScore, secondMatchScore, thirdMatchScore);
+    table[row][column] = score;
+}
+
+int computeFirstMatchScore(char *sequence1, char *sequence2, int **table,
+                           int row, int column, int m, int s)
+{
+    if (sequence1[row - 1] == sequence2[column - 1])
+    {
+        return table[row - 1][column - 1] + m;
+    }
+    else
+    {
+        return table[row - 1][column - 1] + s;
+    }
+}
+
+int computeSecondMatchScore(int **table, int row, int column, int g)
+{
+    return table[row][column - 1] + g;
+}
+
+int computeThirdMatchScore(int **table, int row, int column, int g)
+{
+    return table[row - 1][column] + g;
+}
+
+int max3(int n1, int n2, int n3)
+{
+    return max(max(n1, n2), n3);
+}
+
 int max(int n1, int n2)
 {
-    if (n1 > n2)
+    if (n1 >= n2)
     {
         return n1;
     }
     return n2;
 }
 
-/**
- * @brief get sequences from data file
- * @param fileName  the file name
- * @param amountOfSequences  the amount of sequneces read (out parmater)
- * @return sequences array
- */
-char **
-getSequencesFromFile(char *fileName, int *amountOfSequences, char names[MAX_AMOUNT_OF_SEQUENCES][MAX_LINE_LENGTH])
+void printScore(int **table, int tableRows, int tableColumns,
+                char *sequence1Name, char *sequence2Name)
 {
-
-    FILE *fileHandle;
-    char line[MAX_LINE_LENGTH];
-
-    // try open file
-    fileHandle = fopen(fileName, "r");
-    if (fileHandle == NULL)
-    {
-        fprintf(stderr, FILE_OPEN_ERROR, fileName);
-        exit(EXIT_FAILURE);
-    }
-
-    char **sequences = (char **) malloc(MAX_AMOUNT_OF_SEQUENCES * sizeof(char *));
-    int seqNumber = -1;
-    char *currentSeq = NULL;
-    size_t currentSeqLength = 0;
-    size_t currentSeqMemory = 0;
-    size_t currentLineLength;
-
-
-    // read file line by line into 'line' array
-    while (fgets(line, MAX_LINE_LENGTH, fileHandle) != NULL)
-    {
-        if (isHeaderLine(line))
-        {
-            // only if not the first one
-            if (seqNumber >= 0)
-            {
-                sequences[seqNumber] = currentSeq;
-            }
-            seqNumber++;
-
-            strcpy(names[seqNumber], line + 1);
-            names[seqNumber][strlen(names[seqNumber]) - 1] = 0;
-
-
-            currentSeq = (char *) malloc(MAX_LINE_LENGTH * sizeof(char));
-            currentSeq[0] = '\0';
-            currentSeqLength = 0;
-            currentSeqMemory = MAX_LINE_LENGTH;
-        }
-        else
-        {
-            if (isWhiteSpace(line))
-            {
-                continue;
-            }
-
-            currentLineLength = strlen(line);
-
-            // remove new line char from line
-            if (line[currentLineLength - 1] == '\n')
-            {
-                line[currentLineLength - 1] = '\0';
-                currentLineLength--;
-            }
-            if (line[currentLineLength - 1] == '\r')
-            {
-                line[currentLineLength - 1] = '\0';
-                currentLineLength--;
-            }
-
-            if (currentSeqLength + currentLineLength < currentSeqMemory)
-            {
-                if (currentSeqLength == 0)
-                {
-                    currentSeqLength++; // for null terminator
-                }
-            }
-            else
-            {
-                currentSeqMemory = currentSeqMemory + MAX_LINE_LENGTH * sizeof(char);
-                currentSeq = (char *) realloc(currentSeq, currentSeqMemory);
-            }
-
-            currentSeq[currentSeqLength] = '\0';
-            strcat(currentSeq, line);
-            currentSeqLength += currentLineLength;
-        }
-    }
-    sequences[seqNumber] = currentSeq;
-    fclose(fileHandle);
-    *amountOfSequences = seqNumber + 1;
-    return sequences;
+    int score = table[tableRows - 1][tableColumns - 1];
+    printf("Score for alignment of %s to %s is %d\n",
+           sequence1Name, sequence2Name, score);
 }
 
-/**
- * @brief check if line is header line
- * @param line line to check
- * @return bool of line is header
- */
-bool isHeaderLine(const char *line)
+void freeTableMemory(int **table, int tableRows)
 {
-    return *line == SEQ_OPENER;
-}
-
-
-/**
- * @brief get int value from string
- * @param string string to get number from
- * @return the number
- */
-int getIntFromString(char *string)
-{
-    errno = 0;
-    char *endOfNumber;
-    int result = 0;
-
-
-    result = (int) strtol(string, &endOfNumber, 10);
-    if (result == 0 && (errno != 0 || endOfNumber == string))
+    for (int i = 0; i < tableRows; i++)
     {
-        fprintf(stderr, INVALID_NUMBER_ERROR, string);
-        exit(EXIT_FAILURE);
+        free(table[i]);
+        table[i] = NULL;
     }
-    return result;
+    free(table);
+    table = NULL;
 }
 
-/**
- * @brief check if line is empty
- * @param string the line
- * @return is empty
- */
-bool isWhiteSpace(const char *string)
+void freeSequencesMemory(char *sequences[], int numberOfSequences)
 {
-    while (*string)
+    for (int i = 0; i < numberOfSequences; i++)
     {
-        if (!isspace(*string))
-        {
-            return false;
-        }
-        string++;
+        free(sequences[i]);
+        sequences[i] = NULL;
     }
-    return true;
 }
-

@@ -337,8 +337,8 @@ void readSequencesFile(char *fileName, char *sequencesNames[], char *sequences[]
             }
             else
             {
-                sequenceLength = (int)strlen(sequences[*numberOfSequencesAddress]);
-                temp = (char *)realloc(sequences[*numberOfSequencesAddress],
+                sequenceLength = (int)strlen(sequences[*numberOfSequencesAddress - 1]);
+                temp = (char *)realloc(sequences[*numberOfSequencesAddress - 1],
                         (sequenceLength + rowLength + 1) * sizeof(char));
                 if (temp == NULL)
                 {
@@ -347,10 +347,10 @@ void readSequencesFile(char *fileName, char *sequencesNames[], char *sequences[]
                     freeSequencesMemory(sequences, *numberOfSequencesAddress);
                     exit(EXIT_FAILURE);
                 }
-                sequences[*numberOfSequencesAddress] = temp;
-                strncpy(sequences[*numberOfSequencesAddress] + sequenceLength, row,
+                sequences[*numberOfSequencesAddress - 1] = temp;
+                strncpy(sequences[*numberOfSequencesAddress - 1] + sequenceLength, row,
                         rowLength * sizeof(char));
-                sequences[*numberOfSequencesAddress][sequenceLength + rowLength] = '\0';
+                sequences[*numberOfSequencesAddress - 1][sequenceLength + rowLength] = '\0';
             }
         }
     }
