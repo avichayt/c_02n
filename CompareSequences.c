@@ -5,8 +5,8 @@
 #include <errno.h>
 #include <ctype.h>
 
-#define MAX_AMOUNT_OF_SEQUENCES 100
-#define MAX_LINE_LENGTH 100
+#define MAX_AMOUNT_OF_SEQUENCES 101
+#define MAX_LINE_LENGTH 101
 #define AMOUNT_OF_ARGC 5
 
 #define FILE_NAME_ARGUMENT 1
